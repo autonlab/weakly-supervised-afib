@@ -1,0 +1,12 @@
+name: afib
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - mlflow
+  - joblib
+  - pip
+  - pip:
+    - audata
+    - neurokit2
+prefix: /home/rkaufman/anaconda3/envs/afib

@@ -1,0 +1,18 @@
+name: afib
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      model: {type: str, default: 'lm'}
+      src: {type: str, default: '10000_stratified_sampled_points.csv'}
+      datum_size_minutes: {type: int, default: 10}
+      h5_dir: {type: str, default: '/home/rkaufman/workspace/remote'}
+      feature_set: {type: str, default: 'features_nk'}
+    command: "python main.py --model {model} --src {src} --datum_size_minutes {datum_size_minutes} --h5_dir {h5_dir} --feature_set {feature_set}"
+  run_nn:
+    parameters:
+      alpha: {type: float, default: 0.5}
+      l1_ratio: {type: float, default: 0.1}
+    command: "python train.py {alpha} {l1_ratio}"

@@ -1,2 +1,9 @@
 # aidart-afib-forecasting
-Putting `afib_detection` and `afib_prediction` repositories together
+Pipeline forming an afib forecast model via weak supervision.
+
+## Run
+```
+pip install mlflow
+mlflow run .
+```
+See the `MLProfile` config file to see what `run` runs.
