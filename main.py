@@ -1,6 +1,9 @@
 import argparse
+import mlflow
 from pathlib import Path
 import pandas as pd
+import pickle
+
 
 # local package loads
 from data import preprocess, featurize, utilities
@@ -27,22 +30,34 @@ if __name__=='__main__':
         choices=[list(fDict.keys())[0] for fDict in utilities.getDataConfig().features],
         help='Feature set to use (see `data/config.yml` for possible sets)')
     args = parser.parse_args()
-    print(args)
     model, src, winLength = args.model, args.src, args.datum_size_minutes
     featureSet = args.feature_set
 
     #get features from data config
     featureSets = dict()
     for featureDict in config.features: featureSets = {**featureSets,**featureDict}
-    print(featureSets)
     features = featureSets[featureSet]
-    print(features)
 
     src = pd.read_csv(
         Path(__file__).parent / 'data' / 'assets' / src,
         parse_dates=['time']
     )
-    fins, times, slices, samplerate = preprocess.extractAndNormalize(src, winLength, Path(args.h5_dir))
-    featurized = featurize.nk_featurizer(fins, times, slices, samplerate, features)
-    print(slices.shape)
-    print(slices)
+    N_JOBS = 15
+    fins, times, slices, samplerate = preprocess.extractAndNormalize(src, winLength, Path(args.h5_dir), N_JOBS)
+    objToStore = (fins, times, slices, samplerate)
+    normalizedSignalsPath = Path(__file__).parent / 'intermediate-outputs' / 'normalized.pkl'
+    with open(normalizedSignalsPath, 'wb+') as writefile:
+        pickle.dump(objToStore, normalizedSignalsPath)
+    mlflow.log_artifact(
+        normalizedSignalsPath,
+        'normalized-signal-dir')
+
+    featurized: pd.DataFrame = featurize.nk_featurizer(fins, times, slices, samplerate, features, N_JOBS)
+
+    featPath = Path(__file__).parent / 'intermediate-outputs' / 'featurized.csv'
+    featurized.to_csv(featPath)
+    mlflow.log_artifact(
+        featPath,
+        'featurized-data-dir')
+
+    print('-- featurization complete --')

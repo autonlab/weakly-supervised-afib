@@ -12,6 +12,8 @@ import yaml
     Miscellaneous utilities for afib detection and risk prediction model formation
 """
 
+## TODO organize this file
+
 #https://stackoverflow.com/questions/6866600/how-to-parse-read-a-yaml-file-into-a-python-object
 class Struct:
     def __init__(self, **entries): 
