@@ -9,4 +9,5 @@ dependencies:
   - pip:
     - audata
     - neurokit2
+    - pyclustertend
 prefix: /home/rkaufman/anaconda3/envs/afib

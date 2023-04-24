@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import neurokit2 as nk
 from neurokit2 import ecg_process, ecg_analyze
 import pandas as pd
-# from pyclustertend import hopkins
+from pyclustertend import hopkins
 from sklearn.metrics import silhouette_score
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -193,7 +193,7 @@ def featurize(dataSlice, samplerate):
 def featurize_nk(dataSlice, samplerate, sendProcessed=False):
     try:
         sigs, info = ecg_process(dataSlice, sampling_rate=samplerate)
-        m_nk = ecg_analyze(sigs, sampling_rate=samplerate, withhrv=False)
+        m_nk = ecg_analyze(sigs, sampling_rate=samplerate)
         m_nk.columns = m_nk.columns.str.lower()
         rPeaks = sigs['ECG_R_Peaks'].to_numpy().nonzero()[0]
         beat2beatIntervals = list()

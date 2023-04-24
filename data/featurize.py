@@ -32,6 +32,7 @@ def nk_featurizer(fins: list[int], times: list[dt.datetime], slices: np.array, s
     return pd.DataFrame(dResult)
 
 def nk_featurizer_itemized(fin, time, slice, samplerate, features):
+    featurizedResult = dict()
     for feature in features:
         featurizedResult[feature] = list()
     shortSegmentFeatures = computers.featurize_nk(slice, samplerate)

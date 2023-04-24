@@ -3,10 +3,12 @@ import mlflow
 from pathlib import Path
 import pandas as pd
 import pickle
+from os import path
 
 
 # local package loads
 from data import preprocess, featurize, utilities
+
 
 if __name__=='__main__':
     config = utilities.getDataConfig()
@@ -42,12 +44,16 @@ if __name__=='__main__':
         Path(__file__).parent / 'data' / 'assets' / src,
         parse_dates=['time']
     )
-    N_JOBS = 15
-    fins, times, slices, samplerate = preprocess.extractAndNormalize(src, winLength, Path(args.h5_dir), N_JOBS)
-    objToStore = (fins, times, slices, samplerate)
+    N_JOBS = -1
     normalizedSignalsPath = Path(__file__).parent / 'intermediate-outputs' / 'normalized.pkl'
-    with open(normalizedSignalsPath, 'wb+') as writefile:
-        pickle.dump(objToStore, normalizedSignalsPath)
+    ## TODO add a memoized function wrapper instead of this messiness below
+    if path.exists(normalizedSignalsPath):
+        fins, times, slices, samplerate = pickle.load(open(normalizedSignalsPath, 'rb'))
+    else:
+        fins, times, slices, samplerate = preprocess.extractAndNormalize(src, winLength, Path(args.h5_dir), N_JOBS)
+        objToStore = (fins, times, slices, samplerate)
+        with open(normalizedSignalsPath, 'wb+') as writefile:
+            pickle.dump(objToStore, writefile)
     mlflow.log_artifact(
         normalizedSignalsPath,
         'normalized-signal-dir')
