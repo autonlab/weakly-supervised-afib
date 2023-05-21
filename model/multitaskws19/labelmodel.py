@@ -1,11 +1,11 @@
 from snorkel.labeling.model import LabelModel
 from snorkel.labeling import LFAnalysis
 import numpy as np
-import data.utilities as du
 from joblib import Memory
 from tqdm import tqdm
 
-from .labelmodel_heuristics import get_vote_vector, get_vote_vector_nk, numberToLabelMap
+
+from .labelmodel_heuristics import get_lf_names, get_vote_vector_nk, numberToLabelMap
 
 def getHeuristicVotes(featurizedData):
     L_train = list()
@@ -16,7 +16,7 @@ def getHeuristicVotes(featurizedData):
 class LabelModelCustom:
     def __init__(self, **kwargs):
         self.getHeuristicVotes = getHeuristicVotes
-        self.lm = LabelModel(cardinality=3, verbose=False)
+        self.lm = LabelModel(cardinality=2, verbose=False)
         self.l_train = None
 
     def fit(self, featurizedData):
@@ -25,7 +25,7 @@ class LabelModelCustom:
 
     def predict(self, featurizedData, returnHeuristicVotes=False):
         hVotes = self.getHeuristicVotes(featurizedData)
-        predictions = [numberToLabelMap[prediction] for prediction in self.lm.predict(L=hVotes)]
+        predictions = [prediction for prediction in self.lm.predict(L=hVotes)]
         if (returnHeuristicVotes):
             return predictions, [[numberToLabelMap[v] for v in hVoteSet] for hVoteSet in hVotes]
         else:
@@ -37,3 +37,8 @@ class LabelModelCustom:
 
     def getAnalysis(self) -> LFAnalysis:
         return LFAnalysis(self.l_train)
+
+    def getHeuristicFittedWeights(self):
+        weights = self.lm.get_weights()
+        lfs = get_lf_names()
+        return zip(lfs, weights)

@@ -33,6 +33,7 @@ def nk_featurizer(fins: list[int], times: list[dt.datetime], slices: np.array, s
 
 def nk_featurizer_itemized(fin, time, slice, samplerate, features):
     featurizedResult = dict()
+    featurizedResult['time'] = list(); featurizedResult['fin_study_id'] = list()
     for feature in features:
         featurizedResult[feature] = list()
     shortSegmentFeatures = computers.featurize_nk(slice, samplerate)
@@ -42,8 +43,8 @@ def nk_featurizer_itemized(fin, time, slice, samplerate, features):
             featurizedResult[feature].append(shortSegmentFeatures[feature])
         for feature in longSegmentFeatures:
             featurizedResult[feature].append(longSegmentFeatures[feature])
-        featurizedResult['time'].append(times[i])
-        featurizedResult['fin_study_id'].append(fins[i])
+        featurizedResult['time'].append(time)
+        featurizedResult['fin_study_id'].append(fin)
     return featurizedResult
 
 '''

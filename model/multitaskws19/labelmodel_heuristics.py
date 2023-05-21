@@ -1,5 +1,3 @@
-import pickle
-
 thresholds = {
     'cov_high'  :    .08,
     'cov_low'   :    .05,
@@ -9,11 +7,11 @@ thresholds = {
     'std_low'   :   5.,
     'range_high':  10.,
     'range_low' :   5.,
-    'pnn20_high':    .80,
-    'pnn20_low' :    .71,
-    'pnn50_high':    .70,
-    'pnn50_mid' :    .50,
-    'pnn50_low' :    .30,
+    'pnn20_high':    80,
+    'pnn20_low' :    71,
+    'pnn50_high':    70,
+    'pnn50_mid' :    50,
+    'pnn50_low' :    30,
     'rmssd_high': 185.,
     'rmssd_low' : 100.,
     'sdnn_high' : 120.,
@@ -22,52 +20,88 @@ thresholds = {
 }
 
 ABSTAIN= -1
-ATRIAL_FIBRILLATION = 0
-SINUS = 1
+SINUS = 0
 OTHER = SINUS
+ATRIAL_FIBRILLATION = 1
 # OTHER = 2 # depending on 3-class or binary problem choice
 physionetRF = None
 # scaler = None
 
 numberToLabelMap = {
     -1: 'ABSTAIN',
-    0: 'ATRIAL_FIBRILLATION',
-    1: 'SINUS',
+    0: 'SINUS',
+    1: 'ATRIAL_FIBRILLATION',
     2: 'OTHER',
 }
+
+def get_lf_names():
+    return [
+        'variation_afib',
+        # 'variation_other',
+        'variation_sinus',
+        'iqr_afib',
+        # 'iqr_other',
+        'iqr_sinus',
+        # 'range_afib',
+        # 'range_other',
+        # 'range_sinus',
+        'std_afib',
+        # 'std_other',
+        'std_sinus',
+        # 'pnn20_afib',
+        # 'pnn20_other',
+        # 'pnn20_sinus',
+        'pnn50_afib',
+        # 'pnn50_other',
+        'pnn50_sinus',
+        'rmssd_afib',
+        # 'rmssd_other',
+        'rmssd_sinus',
+        # 'sdnn_afib',
+        # 'sdnn_other',
+        # 'sdnn_sinus',
+        # 'hopkins_sinus',
+        # 'hopkins_other',
+        # 'sil_coef_sinus',
+        # 'sil_coef_other',
+        # 'sse_afib_other',
+        # 'sse_afib_sinus',
+        # 'sse_diff_afib',
+    ]
+
 def get_vote_vector_nk( **kwargs):
     return [
         variation_afib(kwargs['b2b_var']),
-        variation_other(kwargs['b2b_var']),
+        # variation_other(kwargs['b2b_var']),
         variation_sinus(kwargs['b2b_var']),
         iqr_afib(kwargs['b2b_iqr']),
-        iqr_other(kwargs['b2b_iqr']),
+        # iqr_other(kwargs['b2b_iqr']),
         iqr_sinus(kwargs['b2b_iqr']),
-        range_afib(kwargs['b2b_range']),
-        range_other(kwargs['b2b_range']),
-        range_sinus(kwargs['b2b_range']),
+        # range_afib(kwargs['b2b_range']),
+        # range_other(kwargs['b2b_range']),
+        # range_sinus(kwargs['b2b_range']),
         std_afib(kwargs['b2b_std']),
-        std_other(kwargs['b2b_std']),
+        # std_other(kwargs['b2b_std']),
         std_sinus(kwargs['b2b_std']),
-        pnn20_afib(kwargs['hrv_pnn20']),
-        pnn20_other(kwargs['hrv_pnn20']),
-        pnn20_sinus(kwargs['hrv_pnn20']),
-        #pnn50_afib(kwargs['pnn50']),
-        pnn50_other(kwargs['hrv_pnn50']),
+        # pnn20_afib(kwargs['hrv_pnn20'] ),
+        # pnn20_other(kwargs['hrv_pnn20']),
+        # pnn20_sinus(kwargs['hrv_pnn20']),
+        pnn50_afib(kwargs['hrv_pnn50']),
+        # pnn50_other(kwargs['hrv_pnn50']),
         pnn50_sinus(kwargs['hrv_pnn50']),
         rmssd_afib(kwargs['hrv_rmssd']),
-        rmssd_other(kwargs['hrv_rmssd']),
+        # rmssd_other(kwargs['hrv_rmssd']),
         rmssd_sinus(kwargs['hrv_rmssd']),
-        sdnn_afib(kwargs['hrv_sdnn']),
-        sdnn_other(kwargs['hrv_sdnn']),
-        sdnn_sinus(kwargs['hrv_sdnn']),
-        hopkins_sinus(kwargs['hopkins_statistic']),
-        hopkins_other(kwargs['hopkins_statistic']),
-        sil_coef_sinus(kwargs['max_sil_score']),
-        sil_coef_other(kwargs['max_sil_score']),
-        sse_afib_other(kwargs['sse_1_clusters']),
-        sse_afib_sinus(kwargs['sse_1_clusters']),
-        sse_diff_afib(kwargs['sse_1_clusters'], kwargs['sse_2_clusters']),
+        # sdnn_afib(kwargs['hrv_sdnn']),
+        # sdnn_other(kwargs['hrv_sdnn']),
+        # sdnn_sinus(kwargs['hrv_sdnn']),
+        # hopkins_sinus(kwargs['hopkins_statistic']),
+        # hopkins_other(kwargs['hopkins_statistic']),
+        # sil_coef_sinus(kwargs['max_sil_score']),
+        # sil_coef_other(kwargs['max_sil_score']),
+        # sse_afib_other(kwargs['sse_1_clusters']),
+        # sse_afib_sinus(kwargs['sse_1_clusters']),
+        # sse_diff_afib(kwargs['sse_1_clusters'], kwargs['sse_2_clusters']),
         # trainedPhysionet(kwargs)
         # mitbih_model_afib(kwargs['']),
         # mitbih_model_sinus(kwargs['']),
@@ -149,30 +183,30 @@ def sse_diff_afib(sseSingle, sseDouble):
         return ATRIAL_FIBRILLATION
     else:
         return ABSTAIN
-from data.manipulators import loadScaler, applyScaler
-from model.utilities import getModelConfig
-import pandas as pd
-def trainedPhysionet(features):
-    global physionetRF, scaler
-    if (physionetRF is None):
-        print('once')
-        with open('./data/assets/physionet_rf.pkl', 'rb') as readfile:
-            physionetRF = pickle.load(readfile)
-        scaler = loadScaler()
-    #load model
+# from data.manipulators import loadScaler, applyScaler
+# from model.utilities import getModelConfig
+# import pandas as pd
+# def trainedPhysionet(features):
+#     global physionetRF, scaler
+#     if (physionetRF is None):
+#         print('once')
+#         with open('./data/assets/physionet_rf.pkl', 'rb') as readfile:
+#             physionetRF = pickle.load(readfile)
+#         scaler = loadScaler()
+#     #load model
 
-    #predict
-    # try:
-    features = pd.DataFrame(features, index=[0])
-    features_nk = getModelConfig().features_trunc
-    features = applyScaler(features, features_nk, scaler)
-    res = physionetRF.predict(features[features_nk])[0]
-    if (res == 'ATRIAL_FIBRILLATION'):
-        return ATRIAL_FIBRILLATION
-    elif (res == 'NOT_AFIB'):
-        return SINUS
-    else:
-        return ABSTAIN
+#     #predict
+#     # try:
+#     features = pd.DataFrame(features, index=[0])
+#     features_nk = getModelConfig().features_trunc
+#     features = applyScaler(features, features_nk, scaler)
+#     res = physionetRF.predict(features[features_nk])[0]
+#     if (res == 'ATRIAL_FIBRILLATION'):
+#         return ATRIAL_FIBRILLATION
+#     elif (res == 'NOT_AFIB'):
+#         return SINUS
+#     else:
+#         return ABSTAIN
     # except:
     #     return ABSTAIN
     # return res
@@ -278,12 +312,12 @@ def pnn50_sinus(pnn50):
     else:
         return ABSTAIN
 
-'''
 def pnn50_afib(pnn50):
     if (pnn50 > thresholds['pnn50_mid']):
         return ATRIAL_FIBRILLATION
     else:
         return ABSTAIN
+'''
 def pnn50_other(pnn50):
     if ((thresholds['pnn50_low'] < pnn50) and (pnn50 < thresholds['pnn50_high'])):
         return OTHER

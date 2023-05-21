@@ -10,9 +10,13 @@ entry_points:
       datum_size_minutes: {type: int, default: 10}
       h5_dir: {type: str, default: '/zfs2/mladi/viewer/projects/mladi/originals/'}
       feature_set: {type: str, default: 'features_nk'}
-    command: "python main.py --model {model} --src {src} --datum_size_minutes {datum_size_minutes} --h5_dir {h5_dir} --feature_set {feature_set}"
-  run_nn:
+      n_jobs: {type: int, default: -1}
+      run_title: {type: str, default: 'untitled'}
+    command: "python main.py --model {model} --src {src} --datum_size_minutes {datum_size_minutes} --h5_dir {h5_dir} --feature_set {feature_set} -j {n_jobs} -t {run_title}"
+  parse_patients:
     parameters:
-      alpha: {type: float, default: 0.5}
-      l1_ratio: {type: float, default: 0.1}
-    command: "python train.py {alpha} {l1_ratio}"
+      num_patients: {type: int, default: 1200}
+      variability_threshold: {type: float, default: 0.65}
+      h5_dir: {type: str, default: '/zfs2/mladi/viewer/projects/mladi/originals/'}
+      n_jobs: {type: int, default: -1}
+    command: "python parse_patients.py -n {num_patients} -v {variability_threshold} -h5 {h5_dir} -j {n_jobs}"

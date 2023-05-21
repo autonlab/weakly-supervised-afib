@@ -3,6 +3,7 @@ import audata as aud
 import datetime as dt
 import numpy as np
 import os
+import pandas as pd
 from pathlib import Path
 import pytz
 import random
@@ -45,6 +46,55 @@ def getSF(series):
     samplingFrequency = numDists/distSums#500#samples/s   numDists / distSums
     samplingFrequency = round(samplingFrequency)
     return samplingFrequency
+
+def eliminateByProportion(df, feat, fThreshold, threshold):
+    resultDict = {
+        'fin_study_id': list(),
+        '%s_average' % feat: list()
+    }
+    for fin, subDF in df.groupby('fin_study_id'):
+        try:
+            s = sum(subDF[feat].apply(lambda x: eval(x, None, locals())[0]))
+        except:
+            continue
+    #     featurized[feat] = featurized[feat].apply(lambda x: eval(x, None, locals())[0])
+        l = len(subDF)
+        resultDict['%s_average' % feat].append(
+            s / l)
+        resultDict['fin_study_id'].append(fin)
+    return pd.DataFrame(resultDict)
+
+def seriesBounds(fin, series, h5Dir):
+    f = findFileByFIN(fin, h5Dir)
+    try:
+        f = aud.File.open(f)
+
+        fileStartTime = f[series][0]['time'].item().to_pydatetime()
+        fileEndTime = f[series][-1]['time'].item().to_pydatetime()
+    except:
+        return None, None
+    fileStartTime, fileEndTime = fileStartTime.replace(tzinfo=pytz.UTC), fileEndTime.replace(tzinfo=pytz.UTC)
+    return fileStartTime, fileEndTime
+
+def signalLength(fin, series, h5Dir):
+    """Returns duration (in seconds) of series for fin
+
+    Args:
+        fin (_type_): _description_
+        series (_type_): _description_
+        h5Dir (_type_): _description_
+    """
+    # try:
+    # except:
+    #     return None
+    try:
+        f = findFileByFIN(fin, h5Dir)
+        f = aud.File.open(f)
+        signalLen = f[series].nrow
+        res = signalLen / getSF(f[series][:100]['time']) # samples / (samples/sec) = seconds
+    except:
+        res = None
+    return res
 
 def binary_search_timeseries(searchtime, auf, lo=0):
     length = auf[HR_SERIES_II].nrow

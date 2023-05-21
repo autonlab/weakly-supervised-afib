@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from itertools import cycle
 from sklearn.metrics import auc, roc_auc_score, roc_curve
+from matplotlib.patches import Polygon
+from shapely.geometry import Polygon
+from descartes import PolygonPatch
 
 def roc(y_test, y_score, title, posLabel=None, dst='roc.png'):
 
@@ -12,14 +17,25 @@ def roc(y_test, y_score, title, posLabel=None, dst='roc.png'):
             fpr, tpr, whoknowswhatthisis = roc_curve(y_test, y_score)
         else:
             fpr, tpr, whoknowswhatthisis = roc_curve(y_test, y_score, pos_label=posLabel)
+        tp_std, fp_std = np.std(tpr), np.std(fpr) 
+        fp_UB, tp_UB, fp_LB, tp_LB = fpr-fp_std, tpr+tp_std, fpr+fp_std, tpr-tp_std
         rocauc = auc(fpr, tpr)
+        roc_df = pd.DataFrame({
+            'FP1': fpr,
+            'TP1': tpr,
+            'FP1UB': fp_UB,
+            'TP1UB': tp_UB,
+            'FP1LB': fp_LB,
+            'TP1LB': tp_LB
+        })
+        roc_augmented(roc_df, title)
         #then single plot
-        plt.plot(
-            fpr,
-            tpr,
-            color='darkorange',
-            label=f'ROC curve (auc = {rocauc:.2})'
-        )
+        # plt.plot(
+        #     fpr,
+        #     tpr,
+        #     color='darkorange',
+        #     label=f'ROC curve (auc = {rocauc:.2})'
+        # )
     else:
         #then multiple plots
         colors = cycle(['aqua', 'yellowgreen', 'cornflowerblue', 'purple', 'orange'])
@@ -28,35 +44,99 @@ def roc(y_test, y_score, title, posLabel=None, dst='roc.png'):
                 fpr, tpr, whoknowswhatthisis = roc_curve(y_test, scores)
             else:
                 fpr, tpr, whoknowswhatthisis = roc_curve(y_test, scores, pos_label=posLabel)
+            tp_std, fp_std = np.std(tpr), np.std(fpr) 
+            fp_UB, tp_UB, fp_LB, tp_LB = fp-fp_std, tp+tp_std, fp+fp_std, tp-tp_std
+            rocauc = auc(fpr, tpr)
+            roc_df = pd.DataFrame({
+                'FP1': fpr,
+                'TP1': tpr,
+                'FP1UB': fp_UB,
+                'TP1UB': tp_UB,
+                'FP1LB': fp_LB,
+                'TP1LB': tp_LB
+            })
+            roc_augmented(roc_df, title)
             rocauc = auc(fpr, tpr)
             #then single plot
-            plt.plot(
-                fpr,
-                tpr,
-                color=next(colors),
-                label=f'{scoreDescriptor} (auc = {rocauc:.2})'
-            )
+            # plt.plot(
+            #     fpr,
+            #     tpr,
+            #     color=next(colors),
+            #     label=f'{scoreDescriptor} (auc = {rocauc:.2})'
+            # )
 
-    plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title(title)
-    plt.legend(loc='lower right')
+    # plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel("False Positive Rate")
+    # plt.ylabel("True Positive Rate")
+    # plt.title(title)
+    # plt.legend(loc='lower right')
     plt.savefig(
        dst
     )
 
+def roc_augmented(a1: pd.DataFrame, label: str):
+    ## ROC curves of a random classifier, for reference
+    RANDOM_FP = np.arange(0, 1., 0.01)
+    RANDOM_TP = np.arange(0, 1., 0.01)
+    RANDOM_FP[0] = 1e-4
+    RANDOM_TP[0] = 1e-4
+    color='blue'
+
+    ## Mean and confidence bands of FPR V.S. TPR curve
+#     a1 = pd.read_csv('./'+op+'A1_roc_std.csv')
+    # a1 = pd.read_csv('./A1_roc_std.csv')
+    conf_UB = a1[['FP1UB', 'TP1UB']].copy()
+    conf_UB.columns = ['X', 'Y']
+    conf_LB = a1[['FP1LB', 'TP1LB']].iloc[range(a1.shape[0]-1, -1, -1)]
+    conf_LB.columns = ['X', 'Y']
+    conf = pd.concat((conf_UB, conf_LB))
+
+    fig = plt.figure(figsize=(15, 4))
+
+    ## FPR V.S. TPR curve
+    ax = fig.add_subplot(1, 3, 1)
+    plt.plot(a1['FP1'], a1['TP1'], color=color, label='RandomForest')
+    poly = Polygon(list(zip(conf['X'], conf['Y'])))
+    poly = PolygonPatch(poly, linewidth=0, fc=color, alpha=0.4)
+    ax.add_patch(poly)
+    plt.plot(RANDOM_FP, RANDOM_TP, color='black', linestyle='--')
+    plt.xlabel('FPR', fontsize=14)
+    plt.xlim(-0.05, 1.05)
+    plt.xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    plt.ylabel('TPR', fontsize=14)
+    plt.ylim(-0.05, 1.05)
+    plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    plt.tick_params(axis='both', which='major', labelsize=14)
+    plt.grid(linestyle='--')
+
+    ## FPR (log-scale) V.S. TPR curve
+    ax = fig.add_subplot(1, 3, 2)  
+    plt.plot(a1['FP1'], a1['TP1'], color=color, label='RandomForest') 
+    poly = Polygon(list(zip(conf['X'], conf['Y'])))
+    poly = PolygonPatch(poly, linewidth=0, fc=color, alpha=0.4)
+    ax.add_patch(poly)
+    plt.plot(RANDOM_FP, RANDOM_TP, color='black', linestyle='--')
+    plt.xlabel('FPR', fontsize=14)
+    plt.xscale('log',base=10) 
+    plt.xlim(0.6*1e-4, 1.6)
+    plt.xticks([1e-4, 1e-3, 1e-2, 1e-1, 1.0], ['$10^{-4}$', '$10^{-3}$', '$10^{-2}$', '$10^{-1}$', '1.0'])
+    plt.ylabel('TPR', fontsize=14)
+    plt.ylim(-0.05, 1.05)
+    plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    plt.tick_params(axis='both', which='major', labelsize=14)
+    plt.grid(linestyle='--')
+    plt.title(title, fontsize=15, pad=10)
+
+
+
 
 # Plot the three ROC graphs
 # op=output prefix
-import os
-import numpy as np
-import pandas as pd
-# from matplotlib.patches import Polygon
-from shapely.geometry import Polygon
-from descartes import PolygonPatch
+# import os
+# import numpy as np
+# import pandas as pd
 def three_roc_plot_mult(title='ROC Curves', op='', predictionsOutput=None, model="rf.model", predictionsFile="~/workspace/afib_detection/testset_binary_norm.csv"):
     # ! ./random_forest load {model} option predict testds {predictionsFile}
     if (predictionsOutput is None):

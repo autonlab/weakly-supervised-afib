@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-from labelmodel import LabelModelCustom
+from .labelmodel import LabelModelCustom
 
 # see [here](https://arxiv.org/abs/1810.02840)
 def trainlm(train_features: pd.DataFrame, test_features: pd.DataFrame, test_labels):

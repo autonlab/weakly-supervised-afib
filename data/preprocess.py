@@ -36,25 +36,28 @@ def extractAndNormalize_itemized(fin, df, desired_minutes, h5_search_dir):
     for i, row in df.iterrows():
         fin, time = row['fin_study_id'], row['time']
         start, end = time - dt.timedelta(minutes=desired_minutes), time
-        x, samplerate = utilities.getSlicesFIN(
-            fin,
-            [utilities.HR_SERIES_II],
-            #  [utilities.HR_SERIES_II# , utilities.HR_SERIES_V],
-            start,
-            end,
-            h5_search_dir)
+        try:
+            x, samplerate = utilities.getSlicesFIN(
+                fin,
+                [utilities.HR_SERIES_II],
+                #  [utilities.HR_SERIES_II# , utilities.HR_SERIES_V],
+                start,
+                end,
+                h5_search_dir)
 
-        if (type(x) == type(None)): continue
-        x = x[0, :]
+            if (type(x) == type(None)): continue
+            x = x[0, :]
 
-        ## iqr normalization
-        mn = x.mean(0)
-        q25 = np.quantile(x,0.25,axis=0)
-        q75 = np.quantile(x,0.75,axis=0)
-        # x = (x - mn[None, :])/(q75-q25+0.1)[None,:]
-        # x = (x - mn[None, :])/(q75-q25+0.1)[None,:]
-        x = (x - mn)/(q75-q25+0.1)
-        x = (x - mn)/(q75-q25+0.1)
+            ## iqr normalization
+            mn = x.mean(0)
+            q25 = np.quantile(x,0.25,axis=0)
+            q75 = np.quantile(x,0.75,axis=0)
+            # x = (x - mn[None, :])/(q75-q25+0.1)[None,:]
+            # x = (x - mn[None, :])/(q75-q25+0.1)[None,:]
+            x = (x - mn)/(q75-q25+0.1)
+            x = (x - mn)/(q75-q25+0.1)
+        except:
+            x = np.array; time = None
         slices.append(x)
         times.append(time)
         fins.append(fin)

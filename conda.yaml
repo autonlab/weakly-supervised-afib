@@ -3,11 +3,15 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - mlflow
   - joblib
+  - mlflow
   - pip
   - pip:
     - audata
     - neurokit2
     - pyclustertend
+    - snorkel
+    - descartes
+    - shapely
+    - numpy==1.21
 prefix: /home/rkaufman/anaconda3/envs/afib
